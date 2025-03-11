@@ -4,11 +4,10 @@ import android.content.Context;
 import cn.sherlock.com.sun.media.sound.SF2Soundbank;
 import cn.sherlock.com.sun.media.sound.SoftSynthesizer;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
-import io.flutter.plugin.common.MethodCall;
+import io.flutter.plugin.common.MethodCall;q
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
-import io.flutter.plugin.common.PluginRegistry.Registrar;
 import io.flutter.plugin.common.BinaryMessenger;
 import java.io.File;
 import java.io.IOException;
@@ -23,13 +22,6 @@ public class FlutterMidiPlugin implements MethodCallHandler, FlutterPlugin {
   private Receiver recv;
   private MethodChannel methodChannel;
   private Context applicationContext;
-
-  /** Plugin registration. */
-  @SuppressWarnings("deprecation")
-  public static void registerWith(Registrar registrar) {
-    final FlutterMidiPlugin instance = new FlutterMidiPlugin();
-    instance.onAttachedToEngine(registrar.context(), registrar.messenger());
-  }
 
   @Override
   public void onAttachedToEngine(FlutterPluginBinding binding) {
