@@ -63,10 +63,13 @@ public class FlutterMidiPlugin implements MethodCallHandler, FlutterPlugin {
         synth.getChannels()[0].programChange(0);
         synth.getChannels()[1].programChange(1);
         recv = synth.getReceiver();
+        result.success("MIDI prepared successfully");
       } catch (IOException e) {
         e.printStackTrace();
+        result.error("IO_ERROR", "Failed to load soundfont: " + e.getMessage(), null);
       } catch (MidiUnavailableException e) {
         e.printStackTrace();
+        result.error("MIDI_UNAVAILABLE", "MIDI unavailable: " + e.getMessage(), null);
       }
     } else if (call.method.equals("change_sound")) {
       try {
@@ -79,10 +82,13 @@ public class FlutterMidiPlugin implements MethodCallHandler, FlutterPlugin {
         synth.getChannels()[0].programChange(0);
         synth.getChannels()[1].programChange(1);
         recv = synth.getReceiver();
+        result.success("Sound changed successfully");
       } catch (IOException e) {
         e.printStackTrace();
+        result.error("IO_ERROR", "Failed to change sound: " + e.getMessage(), null);
       } catch (MidiUnavailableException e) {
         e.printStackTrace();
+        result.error("MIDI_UNAVAILABLE", "MIDI unavailable: " + e.getMessage(), null);
       }
     } else if (call.method.equals("play_midi_note")) {
       int _note = call.argument("note");
@@ -91,8 +97,12 @@ public class FlutterMidiPlugin implements MethodCallHandler, FlutterPlugin {
         ShortMessage msg = new ShortMessage();
         msg.setMessage(ShortMessage.NOTE_ON, 0, _note, _velocity);
         recv.send(msg, -1);
+        result.success("Note played");
       } catch (InvalidMidiDataException e) {
         e.printStackTrace();
+        result.error("INVALID_MIDI", "Invalid MIDI data: " + e.getMessage(), null);
+      } catch (NullPointerException e) {
+        result.error("NOT_INITIALIZED", "MIDI not initialized. Call prepare_midi first.", null);
       }
     } else if (call.method.equals("stop_midi_note")) {
       int _note = call.argument("note");
@@ -101,10 +111,15 @@ public class FlutterMidiPlugin implements MethodCallHandler, FlutterPlugin {
         ShortMessage msg = new ShortMessage();
         msg.setMessage(ShortMessage.NOTE_OFF, 0, _note, _velocity);
         recv.send(msg, -1);
+        result.success("Note stopped");
       } catch (InvalidMidiDataException e) {
         e.printStackTrace();
+        result.error("INVALID_MIDI", "Invalid MIDI data: " + e.getMessage(), null);
+      } catch (NullPointerException e) {
+        result.error("NOT_INITIALIZED", "MIDI not initialized. Call prepare_midi first.", null);
       }
     } else {
+      result.notImplemented();
     }
   }
 }

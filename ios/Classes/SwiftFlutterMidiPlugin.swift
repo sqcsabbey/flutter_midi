@@ -17,10 +17,10 @@ public class SwiftFlutterMidiPlugin: NSObject, FlutterPlugin {
     switch call.method {
       case "prepare_midi":
         let map = call.arguments as? Dictionary<String, String>
-       let data = map?["path"]
-      let url = URL(fileURLWithPath: data!)
-         au = AudioUnitMIDISynth(soundfont: url)
-          print("Valid URL: \(url)")
+        let data = map?["path"]
+        let url = URL(fileURLWithPath: data!)
+        au = AudioUnitMIDISynth(soundfont: url)
+        print("AudioUnitMIDISynth created with $url")
         let message = "Prepared Sound Font"
         result(message)
     case "change_sound":
@@ -43,14 +43,22 @@ public class SwiftFlutterMidiPlugin: NSObject, FlutterPlugin {
         _arguments = call.arguments as! [String : Any];
         let midi = _arguments["note"] as? Int
         let velocity = _arguments["velocity"] as? Int
-        au.playPitch(midi: midi ?? 60, velocity: velocity ?? 64)
+        guard let audioUnit = au else {
+          result("Error: Audio unit not initialized")
+          return
+        }
+        audioUnit.playPitch(midi: midi ?? 60, velocity: velocity ?? 64)
         let message = "Playing: \(String(describing: midi!))"
         result(message)
       case "stop_midi_note":
         _arguments = call.arguments as! [String : Any];
         let midi = _arguments["note"] as? Int
         let velocity = _arguments["velocity"] as? Int
-      au.stopPitch(midi: midi ?? 60, velocity: velocity ?? 64)
+        guard let audioUnit = au else {
+          result("Error: Audio unit not initialized")
+          return
+        }
+        audioUnit.stopPitch(midi: midi ?? 60, velocity: velocity ?? 64)
         let message = "Stopped: \(String(describing: midi!))"
         result(message)
       default:

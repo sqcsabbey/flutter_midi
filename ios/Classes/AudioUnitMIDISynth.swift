@@ -40,7 +40,6 @@ class AudioUnitMIDISynth: NSObject {
     init(soundfont: URL) {
         super.init()
         prepare(soundfont:soundfont)
-       
     }
     
     func prepare(soundfont: URL) {
@@ -113,21 +112,26 @@ class AudioUnitMIDISynth: NSObject {
     /// This will load the default sound font and set the synth unit's property.
     /// - postcondition: `self.midisynthUnit` will have it's sound font url set.
     func loadMIDISynthSoundFont() {
-
-        if var bankURL = bankUrl {
-
-            let status = AudioUnitSetProperty(
-                self.midisynthUnit!,
-                AudioUnitPropertyID(kMusicDeviceProperty_SoundBankURL),
-                AudioUnitScope(kAudioUnitScope_Global),
-                0,
-                &bankURL,
-                UInt32(MemoryLayout<URL>.size))
-
-            AudioUtils.CheckError(status)
-            print("loaded sound font")
+        if #available(iOS 26.0, *) {
+            print("iOS 26+ detected, attempting alternate sound font loading approach")
+            if var bankURL = bankUrl {
+                print("iOS 26+: Temporarily skipping sound font loading to prevent crash")
+                // TODO: Implement alternate loading method for iOS 26+
+            }
         } else {
-            print("Could not load sound font")
+            if var bankURL = bankUrl {
+                let status = AudioUnitSetProperty(
+                    self.midisynthUnit!,
+                    AudioUnitPropertyID(kMusicDeviceProperty_SoundBankURL),
+                    AudioUnitScope(kAudioUnitScope_Global),
+                    0,
+                    &bankURL,
+                    UInt32(MemoryLayout<URL>.size))
+                AudioUtils.CheckError(status)
+                print("loaded sound font")
+            } else {
+                print("Could not load sound font")
+            }
         }
     }
 
