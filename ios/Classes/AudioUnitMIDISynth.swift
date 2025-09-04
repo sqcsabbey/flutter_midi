@@ -113,11 +113,8 @@ class AudioUnitMIDISynth: NSObject {
     /// - postcondition: `self.midisynthUnit` will have it's sound font url set.
     func loadMIDISynthSoundFont() {
         if #available(iOS 26.0, *) {
-            print("iOS 26+ detected, attempting alternate sound font loading approach")
-            if var bankURL = bankUrl {
-                print("iOS 26+: Temporarily skipping sound font loading to prevent crash")
-                // TODO: Implement alternate loading method for iOS 26+
-            }
+            print("iOS 26+ detected, using alternate sound font loading approach")
+            loadSoundFontForIOS26()
         } else {
             if var bankURL = bankUrl {
                 let status = AudioUnitSetProperty(
@@ -132,6 +129,77 @@ class AudioUnitMIDISynth: NSObject {
             } else {
                 print("Could not load sound font")
             }
+        }
+    }
+    
+    /// Alternate sound font loading method for iOS 26+
+    /// Uses CFURLRef bridging to work around iOS 26 compatibility issues
+    @available(iOS 26.0, *)
+    private func loadSoundFontForIOS26() {
+        guard let bankURL = bankUrl else {
+            print("Could not load sound font - no URL provided")
+            return
+        }
+        
+        // Convert URL to CFURLRef for better compatibility with iOS 26+
+        let cfURL = bankURL as CFURL
+        var cfURLRef: Unmanaged<CFURL>? = Unmanaged.passUnretained(cfURL)
+        
+        defer {
+            cfURLRef = nil
+        }
+        
+        // Try using the property with CFURLRef instead of URL
+        withUnsafeMutablePointer(to: &cfURLRef) { pointer in
+            let status = AudioUnitSetProperty(
+                self.midisynthUnit!,
+                AudioUnitPropertyID(kMusicDeviceProperty_SoundBankURL),
+                AudioUnitScope(kAudioUnitScope_Global),
+                0,
+                pointer,
+                UInt32(MemoryLayout<Unmanaged<CFURL>?>.size))
+            
+            if status == noErr {
+                print("iOS 26+: Successfully loaded sound font using CFURLRef approach")
+            } else {
+                print("iOS 26+: Failed to load sound font with status: \(status)")
+                // Fallback: Try loading with file path string
+                loadSoundFontUsingPath()
+            }
+        }
+    }
+    
+    /// Fallback method using file path for iOS 26+
+    @available(iOS 26.0, *)
+    private func loadSoundFontUsingPath() {
+        guard let bankURL = bankUrl else {
+            return
+        }
+        
+        // Try accessing the file path directly
+        let filePath = bankURL.path
+        let fileManager = FileManager.default
+        
+        if fileManager.fileExists(atPath: filePath) {
+            // Create a file URL from the path
+            let fileURL = URL(fileURLWithPath: filePath)
+            var urlRef = fileURL as CFURL
+            
+            let status = AudioUnitSetProperty(
+                self.midisynthUnit!,
+                AudioUnitPropertyID(kMusicDeviceProperty_SoundBankURL),
+                AudioUnitScope(kAudioUnitScope_Global),
+                0,
+                &urlRef,
+                UInt32(MemoryLayout<CFURL>.size))
+            
+            if status == noErr {
+                print("iOS 26+: Successfully loaded sound font using file path approach")
+            } else {
+                print("iOS 26+: Failed to load sound font using path. Status: \(status)")
+            }
+        } else {
+            print("iOS 26+: Sound font file does not exist at path: \(filePath)")
         }
     }
 
